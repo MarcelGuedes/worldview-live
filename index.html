@@ -1,198 +1,140 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Globo com Câmera - Projeto Local</title>
+  <meta charset="UTF-8">
+  <title>WorldView Live com Three-Globe</title>
   <style>
-    body, html {
-      margin: 0; padding: 0; height: 100%; background: #121212; overflow: hidden;
+    html, body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #121212;
       font-family: Arial, sans-serif;
     }
-    #container {
-      display: flex; height: 100vh;
-    }
+
     #menu-lateral {
-      width: 320px; background: #1e1e1e; padding: 20px; display: flex; flex-direction: column;
+      position: absolute;
+      top: 0; left: 0;
+      width: 320px;
+      height: 100%;
+      background: #1e1e1e;
       color: white;
+      padding: 20px;
+      box-sizing: border-box;
+      z-index: 10;
     }
-    #menu-lateral h1 {
-      font-size: 24px; margin-bottom: 20px; color: #00c8ff;
-    }
-    #menu-lateral input[type="text"],
-    #menu-lateral select {
-      padding: 10px; font-size: 16px; margin-bottom: 20px;
-      border: none; border-radius: 5px;
-    }
-    #menu-lateral button {
-      padding: 10px; font-size: 16px; background: #00c8ff;
-      border: none; border-radius: 5px; color: #121212;
-      cursor: pointer; transition: background-color 0.3s ease; margin-top: auto;
-    }
-    #menu-lateral button:hover {
-      background-color: #008db3;
-    }
+
     #globo-container {
-      flex-grow: 1; position: relative;
+      width: 100vw;
+      height: 100vh;
     }
-    canvas {
-      display: block;
-    }
+
     #camera-info {
-      position: absolute; top: 20px; right: 20px;
-      background: rgba(0,0,0,0.8); padding: 15px; border-radius: 8px;
-      max-width: 320px; z-index: 10; display: none; color: white;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      display: none;
+      max-width: 320px;
+      z-index: 10;
     }
-    #camera-info h3 { margin-bottom: 10px; color: #00c8ff; }
-    #camera-info p { margin: 5px 0; }
-    #camera-video {
-      width: 100%; border-radius: 5px;
+
+    #camera-info img {
+      width: 100%;
+      border-radius: 5px;
     }
+
     #camera-info button {
-      margin-top: 10px; padding: 8px 12px;
-      background-color: #00c8ff; border: none; border-radius: 5px;
-      color: #121212; cursor: pointer;
+      margin-top: 10px;
+      padding: 8px 12px;
+      background-color: #00c8ff;
+      border: none;
+      border-radius: 5px;
+      color: #121212;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div id="container">
-    <!-- MENU LATERAL -->
-    <div id="menu-lateral">
-      <h1>🌐 WorldView Live</h1>
-      <input type="text" placeholder="Buscar câmera ou local..." />
-      <select>
-        <option value="todos">Todas categorias</option>
-        <option value="cidade">Cidades</option>
-        <option value="praia">Praias</option>
-        <option value="natureza">Natureza</option>
-      </select>
-      <button>Apoie este projeto ❤️</button>
-    </div>
+  <div id="globo-container"></div>
 
-    <!-- GLOBO -->
-    <div id="globo-container"></div>
+  <div id="menu-lateral">
+    <h1>🌐 WorldView Live</h1>
+    <input type="text" placeholder="Buscar câmera..." style="width:100%; padding:10px; margin-bottom:20px;">
+    <select style="width:100%; padding:10px; margin-bottom:20px;">
+      <option>Todas categorias</option>
+      <option>Cidade</option>
+      <option>Praia</option>
+      <option>Natureza</option>
+    </select>
+    <button style="width:100%; padding:10px;">Apoie este projeto ❤️</button>
   </div>
 
-  <!-- JANELA DE CÂMERA -->
   <div id="camera-info">
-    <h3 id="camera-title">Título da Câmera</h3>
+    <h3 id="camera-title">Nome da Câmera</h3>
     <p id="camera-location">Local: --</p>
-    <img id="camera-video" src="" alt="Stream ao vivo" />
-    <button onclick="closeCameraInfo()">Fechar</button>
+    <img id="camera-video" src="" alt="Stream ao vivo">
+    <button onclick="document.getElementById('camera-info').style.display='none'">Fechar</button>
   </div>
 
   <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/examples/js/controls/OrbitControls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three-globe@2.26.3/dist/three-globe.min.js"></script>
 
   <script>
-    const container = document.getElementById('globo-container');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(0, 0, 3);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('globo-container').appendChild(renderer.domElement);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    container.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 300;
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.rotateSpeed = 0.5;
-    controls.zoomSpeed = 0.6;
-    controls.minDistance = 1.3;
-    controls.maxDistance = 5;
-    controls.enablePan = false;
+    controls.dampingFactor = 0.1;
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    directionalLight.position.set(5, 3, 5);
-    scene.add(directionalLight);
+    const globe = new ThreeGlobe()
+      .globeImageUrl('https://raw.githubusercontent.com/MarcelGuedesDev/assets/main/earthmap2k.jpg')
+      .pointsData([
+        {
+          lat: 41.139981,
+          lng: -104.820246,
+          size: 1.5,
+          color: 'red',
+          nome: 'Highway Cam - Cheyenne',
+          cidade: 'Wyoming, EUA',
+          stream: 'https://images.drivebc.ca/bchighwaycam/pub/cameras/250.jpg'
+        }
+      ])
+      .pointAltitude('size')
+      .pointColor('color');
 
-    // Textura da Terra de alta qualidade (NASA)
-    const textureLoader = new THREE.TextureLoader();
-   const earthTexture = textureLoader.load('https://raw.githubusercontent.com/marcelguedesdev/assets/main/earthmap2k.jpg');
+    scene.add(globe);
 
-    earthTexture.encoding = THREE.sRGBEncoding;
-    earthTexture.anisotropy = 16;
-
-    const earthRadius = 1;
-    const earthMaterial = new THREE.MeshPhongMaterial({ map: earthTexture });
-    const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(earthRadius, 64, 64), earthMaterial);
-    scene.add(earthMesh);
-
-    // Lista de câmeras simuladas
-    const cameras = [
-      {
-        nome: 'Highway Cam - Cheyenne',
-        cidade: 'Wyoming, EUA',
-        latitude: 41.139981,
-        longitude: -104.820246,
-        stream: 'https://images.drivebc.ca/bchighwaycam/pub/cameras/250.jpg'
-      }
-    ];
-
-    function createPin(lat, lon) {
-      const pinMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-      const pin = new THREE.Mesh(new THREE.SphereGeometry(0.015, 8, 8), pinMaterial);
-      const phi = (90 - lat) * (Math.PI / 180);
-      const theta = (lon + 180) * (Math.PI / 180);
-      const radius = earthRadius + 0.015;
-
-      pin.position.x = radius * Math.sin(phi) * Math.cos(theta);
-      pin.position.y = radius * Math.cos(phi);
-      pin.position.z = radius * Math.sin(phi) * Math.sin(theta);
-      return pin;
-    }
-
-    const pins = [];
-    cameras.forEach(cam => {
-      const pin = createPin(cam.latitude, cam.longitude);
-      pin.userData = cam;
-      scene.add(pin);
-      pins.push(pin);
-    });
-
-    function showCameraInfo(cam) {
-      const info = document.getElementById('camera-info');
-      document.getElementById('camera-title').textContent = cam.nome;
-      document.getElementById('camera-location').textContent = `Local: ${cam.cidade}`;
-
-      const videoElement = document.getElementById('camera-video');
-      const baseUrl = cam.stream;
-      const cacheBuster = () => `${baseUrl}?_=${new Date().getTime()}`;
-
-      videoElement.src = cacheBuster();
-      info.style.display = 'block';
-
-      if (window.refreshInterval) clearInterval(window.refreshInterval);
-      window.refreshInterval = setInterval(() => {
-        videoElement.src = cacheBuster();
-      }, 1500);
-    }
-
-    function closeCameraInfo() {
-      const info = document.getElementById('camera-info');
-      info.style.display = 'none';
-      document.getElementById('camera-video').src = '';
-      if (window.refreshInterval) clearInterval(window.refreshInterval);
-    }
+    const ambient = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(ambient);
 
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
+    const canvas = renderer.domElement;
 
-    container.addEventListener('click', (event) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    canvas.addEventListener('click', (event) => {
+      const bounds = canvas.getBoundingClientRect();
+      mouse.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+      mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
 
       raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(pins);
-      if (intersects.length > 0) {
-        showCameraInfo(intersects[0].object.userData);
-      } else {
-        closeCameraInfo();
+      const intersects = raycaster.intersectObjects(globe.pointsData().map(p => p.__threeObj));
+      if (intersects.length) {
+        const data = intersects[0].object.__data;
+        document.getElementById('camera-title').textContent = data.nome;
+        document.getElementById('camera-location').textContent = `Local: ${data.cidade}`;
+        document.getElementById('camera-video').src = `${data.stream}?_=${Date.now()}`;
+        document.getElementById('camera-info').style.display = 'block';
       }
     });
 
@@ -204,9 +146,9 @@
     animate();
 
     window.addEventListener('resize', () => {
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     });
   </script>
 </body>
