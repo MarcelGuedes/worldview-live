@@ -1,31 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>WorldView Live com Three-Globe</title>
+  <meta charset="UTF-8" />
+  <title>WorldView Live - Cesium</title>
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
   <style>
-    html, body {
-      margin: 0;
-      overflow: hidden;
-      background-color: #121212;
+    html, body, #cesiumContainer {
+      width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
       font-family: Arial, sans-serif;
-    }
-
-    #menu-lateral {
-      position: absolute;
-      top: 0; left: 0;
-      width: 320px;
-      height: 100%;
-      background: #1e1e1e;
-      color: white;
-      padding: 20px;
-      box-sizing: border-box;
-      z-index: 10;
-    }
-
-    #globo-container {
-      width: 100vw;
-      height: 100vh;
     }
 
     #camera-info {
@@ -36,9 +19,9 @@
       color: white;
       padding: 15px;
       border-radius: 8px;
+      z-index: 10;
       display: none;
       max-width: 320px;
-      z-index: 10;
     }
 
     #camera-info img {
@@ -58,98 +41,62 @@
   </style>
 </head>
 <body>
-  <div id="globo-container"></div>
-
-  <div id="menu-lateral">
-    <h1>🌐 WorldView Live</h1>
-    <input type="text" placeholder="Buscar câmera..." style="width:100%; padding:10px; margin-bottom:20px;">
-    <select style="width:100%; padding:10px; margin-bottom:20px;">
-      <option>Todas categorias</option>
-      <option>Cidade</option>
-      <option>Praia</option>
-      <option>Natureza</option>
-    </select>
-    <button style="width:100%; padding:10px;">Apoie este projeto ❤️</button>
-  </div>
+  <div id="cesiumContainer"></div>
 
   <div id="camera-info">
     <h3 id="camera-title">Nome da Câmera</h3>
     <p id="camera-location">Local: --</p>
-    <img id="camera-video" src="" alt="Stream ao vivo">
+    <img id="camera-video" src="" alt="Stream ao vivo" />
     <button onclick="document.getElementById('camera-info').style.display='none'">Fechar</button>
   </div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three-globe@2.26.3/dist/three-globe.min.js"></script>
-
   <script>
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById('globo-container').appendChild(renderer.domElement);
+    // Inicializa o globo
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      terrainProvider: Cesium.createWorldTerrain(),
+      baseLayerPicker: false
+    });
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 300;
+    // Exemplo de ponto de câmera pública
+    const cameraData = {
+      nome: 'Highway Cam - Cheyenne',
+      cidade: 'Wyoming, EUA',
+      lat: 41.139981,
+      lon: -104.820246,
+      stream: 'https://images.drivebc.ca/bchighwaycam/pub/cameras/250.jpg'
+    };
 
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.1;
+    // Cria o ponto vermelho no globo
+    const entity = viewer.entities.add({
+      name: cameraData.nome,
+      position: Cesium.Cartesian3.fromDegrees(cameraData.lon, cameraData.lat),
+      point: {
+        pixelSize: 12,
+        color: Cesium.Color.RED,
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 2
+      },
+      description: `
+        <strong>${cameraData.nome}</strong><br/>
+        Local: ${cameraData.cidade}<br/>
+        <img src="${cameraData.stream}?_=${Date.now()}" width="100%"/>
+      `
+    });
 
-    const globe = new ThreeGlobe()
-      .globeImageUrl('https://raw.githubusercontent.com/MarcelGuedesDev/assets/main/earthmap2k.jpg')
-      .pointsData([
-        {
-          lat: 41.139981,
-          lng: -104.820246,
-          size: 1.5,
-          color: 'red',
-          nome: 'Highway Cam - Cheyenne',
-          cidade: 'Wyoming, EUA',
-          stream: 'https://images.drivebc.ca/bchighwaycam/pub/cameras/250.jpg'
-        }
-      ])
-      .pointAltitude('size')
-      .pointColor('color');
+    // Move a câmera até o ponto no início
+    viewer.flyTo(entity);
 
-    scene.add(globe);
-
-    const ambient = new THREE.AmbientLight(0xffffff, 1);
-    scene.add(ambient);
-
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    const canvas = renderer.domElement;
-
-    canvas.addEventListener('click', (event) => {
-      const bounds = canvas.getBoundingClientRect();
-      mouse.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-      mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(globe.pointsData().map(p => p.__threeObj));
-      if (intersects.length) {
-        const data = intersects[0].object.__data;
-        document.getElementById('camera-title').textContent = data.nome;
-        document.getElementById('camera-location').textContent = `Local: ${data.cidade}`;
-        document.getElementById('camera-video').src = `${data.stream}?_=${Date.now()}`;
+    // Evento de clique
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    handler.setInputAction(function (movement) {
+      const pickedObject = viewer.scene.pick(movement.position);
+      if (Cesium.defined(pickedObject) && pickedObject.id === entity) {
+        document.getElementById('camera-title').textContent = cameraData.nome;
+        document.getElementById('camera-location').textContent = `Local: ${cameraData.cidade}`;
+        document.getElementById('camera-video').src = `${cameraData.stream}?_=${Date.now()}`;
         document.getElementById('camera-info').style.display = 'block';
       }
-    });
-
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
   </script>
 </body>
 </html>
