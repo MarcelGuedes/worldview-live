@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Globo com Câmera - Projeto Local</title>
+  <style>
+    body, html {
+      margin: 0; padding: 0; height: 100%; background: #121212; overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    #container {
+      display: flex; height: 100vh;
+    }
+    #menu-lateral {
+      width: 320px; background: #1e1e1e; padding: 20px; display: flex; flex-direction: column;
+      color: white;
+    }
+    #menu-lateral h1 {
+      font-size: 24px; margin-bottom: 20px; color: #00c8ff;
+    }
+    #menu-lateral input[type="text"],
+    #menu-lateral select {
+      padding: 10px; font-size: 16px; margin-bottom: 20px;
+      border: none; border-radius: 5px;
+    }
+    #menu-lateral button {
+      padding: 10px; font-size: 16px; background: #00c8ff;
+      border: none; border-radius: 5px; color: #121212;
+      cursor: pointer; transition: background-color 0.3s ease; margin-top: auto;
+    }
+    #menu-lateral button:hover {
+      background-color: #008db3;
+    }
+    #globo-container {
+      flex-grow: 1; position: relative;
+    }
+    canvas {
+      display: block;
+    }
+    #camera-info {
+      position: absolute; top: 20px; right: 20px;
+      background: rgba(0,0,0,0.8); padding: 15px; border-radius: 8px;
+      max-width: 320px; z-index: 10; display: none; color: white;
+    }
+    #camera-info h3 { margin-bottom: 10px; color: #00c8ff; }
+    #camera-info p { margin: 5px 0; }
+    #camera-video {
+      width: 100%; border-radius: 5px;
+    }
+    #camera-info button {
+      margin-top: 10px; padding: 8px 12px;
+      background-color: #00c8ff; border: none; border-radius: 5px;
+      color: #121212; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <!-- MENU LATERAL -->
+    <div id="menu-lateral">
+      <h1>🌐 WorldView Live</h1>
+      <input type="text" placeholder="Buscar câmera ou local..." />
+      <select>
+        <option value="todos">Todas categorias</option>
+        <option value="cidade">Cidades</option>
+        <option value="praia">Praias</option>
+        <option value="natureza">Natureza</option>
+      </select>
+      <button>Apoie este projeto ❤️</button>
+    </div>
+
+    <!-- GLOBO -->
+    <div id="globo-container"></div>
+  </div>
+
+  <!-- JANELA DE CÂMERA -->
+  <div id="camera-info">
+    <h3 id="camera-title">Título da Câmera</h3>
+    <p id="camera-location">Local: --</p>
+    <img id="camera-video" src="" alt="Stream ao vivo" />
+    <button onclick="closeCameraInfo()">Fechar</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.143.0/examples/js/controls/OrbitControls.min.js"></script>
+
+  <script>
+    const container = document.getElementById('globo-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, 0, 3);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.minDistance = 1.5;
+    controls.maxDistance = 10;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight.position.set(5, 3, 5);
+    scene.add(directionalLight);
+
+    // Carrega textura local (sua imagem)
+    const textureLoader = new THREE.TextureLoader();
+    const earthTexture = textureLoader.load('earthmap1k.jpg');
+    earthTexture.encoding = THREE.sRGBEncoding;
+    earthTexture.anisotropy = 16;
+
+    const earthMaterial = new THREE.MeshPhongMaterial({ map: earthTexture });
+    const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), earthMaterial);
+    scene.add(earthMesh);
+
+    // Câmera pública simulada (imagem atualizada)
+    const cameras = [
+      {
+        nome: 'Highway Cam - Cheyenne',
+        cidade: 'Wyoming, EUA',
+        latitude: 41.139981,
+        longitude: -104.820246,
+        stream: 'https://images.drivebc.ca/bchighwaycam/pub/cameras/250.jpg'
+      }
+    ];
+
+    function createPin(lat, lon) {
+      const pinMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const pin = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), pinMaterial);
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lon + 180) * (Math.PI / 180);
+      pin.position.x = Math.sin(phi) * Math.cos(theta);
+      pin.position.y = Math.cos(phi);
+      pin.position.z = Math.sin(phi) * Math.sin(theta);
+      return pin;
+    }
+
+    const pins = [];
+    cameras.forEach(cam => {
+      const pin = createPin(cam.latitude, cam.longitude);
+      pin.userData = cam;
+      scene.add(pin);
+      pins.push(pin);
+    });
+
+    function showCameraInfo(cam) {
+      const info = document.getElementById('camera-info');
+      document.getElementById('camera-title').textContent = cam.nome;
+      document.getElementById('camera-location').textContent = `Local: ${cam.cidade}`;
+
+      const videoElement = document.getElementById('camera-video');
+      const baseUrl = cam.stream;
+      const cacheBuster = () => `${baseUrl}?_=${new Date().getTime()}`;
+
+      videoElement.src = cacheBuster(); // primeira imagem
+      info.style.display = 'block';
+
+      if (window.refreshInterval) clearInterval(window.refreshInterval);
+      window.refreshInterval = setInterval(() => {
+        videoElement.src = cacheBuster();
+      }, 1500); // atualiza a cada 1.5 segundos
+    }
+
+    function closeCameraInfo() {
+      const info = document.getElementById('camera-info');
+      info.style.display = 'none';
+      document.getElementById('camera-video').src = '';
+      if (window.refreshInterval) clearInterval(window.refreshInterval);
+    }
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    container.addEventListener('click', (event) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(pins);
+      if (intersects.length > 0) {
+        showCameraInfo(intersects[0].object.userData);
+      } else {
+        closeCameraInfo();
+      }
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      earthMesh.rotation.y += 0.001;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+    });
+  </script>
+</body>
+</html>
