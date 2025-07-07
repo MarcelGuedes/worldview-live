@@ -107,7 +107,8 @@
 
     // Carrega textura local (sua imagem)
     const textureLoader = new THREE.TextureLoader();
-    const earthTexture = textureLoader.load('earthmap1k.jpg');
+   const earthTexture = textureLoader.load('https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.png');
+
     earthTexture.encoding = THREE.sRGBEncoding;
     earthTexture.anisotropy = 16;
 
