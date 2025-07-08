@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Globo com Câmera - Projeto Local</title>
+  <title>WorldView Live - Câmeras Públicas</title>
   <style>
     body, html {
       margin: 0; padding: 0; height: 100%; background: #121212; overflow: hidden;
@@ -105,12 +105,9 @@
     directionalLight.position.set(5, 3, 5);
     scene.add(directionalLight);
 
-    // Carrega textura local (sua imagem)
+    // 🌍 Textura corrigida (nova imagem do mapa mundial)
     const textureLoader = new THREE.TextureLoader();
-    const earthTexture = textureLoader.load('earthmap1k.jpg');
-    earthTexture.encoding = THREE.sRGBEncoding;
-    earthTexture.anisotropy = 16;
-
+    const earthTexture = textureLoader.load('https://raw.githubusercontent.com/evanoberholster/worldwindjs-earth/master/images/earth-day.jpg');
     const earthMaterial = new THREE.MeshPhongMaterial({ map: earthTexture });
     const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), earthMaterial);
     scene.add(earthMesh);
