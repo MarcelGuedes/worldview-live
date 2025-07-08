@@ -1,102 +1,107 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <title>WorldView Live - Cesium</title>
-  <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
-  <style>
-    html, body, #cesiumContainer {
-      width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
-
-    #camera-info {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 15px;
-      border-radius: 8px;
-      z-index: 10;
-      display: none;
-      max-width: 320px;
-    }
-
-    #camera-info img {
-      width: 100%;
-      border-radius: 5px;
-    }
-
-    #camera-info button {
-      margin-top: 10px;
-      padding: 8px 12px;
-      background-color: #00c8ff;
-      border: none;
-      border-radius: 5px;
-      color: #121212;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <div id="cesiumContainer"></div>
-
-  <div id="camera-info">
-    <h3 id="camera-title">Nome da Câmera</h3>
-    <p id="camera-location">Local: --</p>
-    <img id="camera-video" src="" alt="Stream ao vivo" />
-    <button onclick="document.getElementById('camera-info').style.display='none'">Fechar</button>
-  </div>
-
-  <script>
-    // Inicializa o globo
-    const viewer = new Cesium.Viewer('cesiumContainer', {
-      terrainProvider: Cesium.createWorldTerrain(),
-      baseLayerPicker: false
-    });
-
-    // Exemplo de ponto de câmera pública
-    const cameraData = {
-      nome: 'Highway Cam - Cheyenne',
-      cidade: 'Wyoming, EUA',
-      lat: 41.139981,
-      lon: -104.820246,
-      stream: 'https://images.drivebc.ca/bchighwaycam/pub/cameras/250.jpg'
-    };
-
-    // Cria o ponto vermelho no globo
-    const entity = viewer.entities.add({
-      name: cameraData.nome,
-      position: Cesium.Cartesian3.fromDegrees(cameraData.lon, cameraData.lat),
-      point: {
-        pixelSize: 12,
-        color: Cesium.Color.RED,
-        outlineColor: Cesium.Color.WHITE,
-        outlineWidth: 2
-      },
-      description: `
-        <strong>${cameraData.nome}</strong><br/>
-        Local: ${cameraData.cidade}<br/>
-        <img src="${cameraData.stream}?_=${Date.now()}" width="100%"/>
-      `
-    });
-
-    // Move a câmera até o ponto no início
-    viewer.flyTo(entity);
-
-    // Evento de clique
-    const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-    handler.setInputAction(function (movement) {
-      const pickedObject = viewer.scene.pick(movement.position);
-      if (Cesium.defined(pickedObject) && pickedObject.id === entity) {
-        document.getElementById('camera-title').textContent = cameraData.nome;
-        document.getElementById('camera-location').textContent = `Local: ${cameraData.cidade}`;
-        document.getElementById('camera-video').src = `${cameraData.stream}?_=${Date.now()}`;
-        document.getElementById('camera-info').style.display = 'block';
+  <head>
+    <meta charset="UTF-8" />
+    <title>WorldView Live - Cesium</title>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+    <style>
+      html, body, #cesiumContainer {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
       }
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-  </script>
-</body>
+
+      #cameraInfo {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        z-index: 100;
+        display: none;
+        max-width: 300px;
+      }
+
+      #cameraInfo img {
+        max-width: 100%;
+        border-radius: 5px;
+        margin-top: 10px;
+      }
+
+      #cameraInfo button {
+        margin-top: 10px;
+        padding: 6px 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #00c8ff;
+        color: #121212;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="cesiumContainer"></div>
+    <div id="cameraInfo">
+      <strong id="cameraTitle">Câmera Pública</strong>
+      <p id="cameraLocation">Local: --</p>
+      <img id="cameraImg" src="" alt="Imagem da Câmera" />
+      <button onclick="document.getElementById('cameraInfo').style.display = 'none'">Fechar</button>
+    </div>
+
+    <script>
+      // Inicialização do Cesium
+      const viewer = new Cesium.Viewer("cesiumContainer", {
+        terrainProvider: Cesium.createWorldTerrain(),
+        animation: false,
+        timeline: false,
+        baseLayerPicker: false,
+        sceneModePicker: false,
+        fullscreenButton: false,
+        navigationHelpButton: false,
+      });
+
+      // Coordenadas de exemplo (Wyoming, EUA)
+      const latitude = 41.139981;
+      const longitude = -104.820246;
+
+      // Adiciona ponto vermelho
+      const pinBuilder = new Cesium.PinBuilder();
+      const redPin = viewer.entities.add({
+        name: "Highway Cam - Cheyenne",
+        position: Cesium.Cartesian3.fromDegrees(longitude, latitude),
+        billboard: {
+          image: pinBuilder.fromColor(Cesium.Color.RED, 48).toDataURL(),
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+        },
+        description: `
+          <p><strong>Local:</strong> Wyoming, EUA</p>
+          <img src="https://images.drivebc.ca/bchighwaycam/pub/cameras/250.jpg" width="100%">
+        `,
+      });
+
+      // Ação ao clicar
+      viewer.screenSpaceEventHandler.setInputAction(function onLeftClick(movement) {
+        const pickedObject = viewer.scene.pick(movement.position);
+        if (Cesium.defined(pickedObject) && pickedObject.id === redPin) {
+          document.getElementById("cameraTitle").textContent = pickedObject.id.name;
+          document.getElementById("cameraLocation").textContent = "Local: Wyoming, EUA";
+          document.getElementById("cameraImg").src = "https://images.drivebc.ca/bchighwaycam/pub/cameras/250.jpg";
+          document.getElementById("cameraInfo").style.display = "block";
+        } else {
+          document.getElementById("cameraInfo").style.display = "none";
+        }
+      }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+      // Centraliza a câmera no ponto
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, 2500000)
+      });
+    </script>
+  </body>
 </html>
