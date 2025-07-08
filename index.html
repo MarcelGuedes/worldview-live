@@ -43,16 +43,65 @@
 
   <script src="https://unpkg.com/globe.gl"></script>
   <script>
-    const cams = [
-      { name: "Times Square (NY)", lat:40.758, lng:-73.9855, continent:"america-norte", url:"https://images.earthcam.com/ec_metros/ourcams/tsrobo.jpg" },
-      { name: "Pier 39 (SF)", lat:37.8087, lng:-122.4098, continent:"america-norte", url:"https://www.pier39.com/wp-content/themes/pier39/images/gearhead/livecams/livecam-01.jpg" },
-      { name: "Bondi Beach (Sydney)", lat:-33.8915, lng:151.2767, continent:"oceania", url:"https://www.bondiweather.com.au/webcam/current.jpg" },
-      { name: "Tower Bridge (Londres)", lat:51.5055, lng:-0.0754, continent:"europa", url:"https://www.londonbridgewebcam.com/cam.jpg" },
-      { name: "Torre Eiffel (Paris)", lat:48.8584, lng:2.2945, continent:"europa", url:"https://cdn.webcamgalore.com/France/Paris/TourEiffel.jpg" },
-      { name: "Shibuya Crossing (Tóquio)", lat:35.6595, lng:139.7005, continent:"asia", url:"https://www.shibuya-crossing.jp/webcam/snapshot.jpg" },
-      { name: "Cidade do Cabo", lat:-33.9249, lng:18.4241, continent:"africa", url:"https://www.capetown.travel/webcams/cape-town-snapshot.jpg" },
-      { name: "Niagara Falls (Canadá)", lat:43.0896, lng:-79.0849, continent:"america-norte", url:"https://www.niagarafallslive.com/cams/niagara_falls.jpg" }
-    ];
+   <!-- Dentro do script, substitua a lista de câmeras: -->
+<script>
+  const cams = [
+    {
+      name: "Times Square (NY)",
+      lat: 40.758,
+      lng: -73.9855,
+      continent: "america-norte",
+      youtubeId: "AdUw5RdyZxI"
+    },
+    {
+      name: "Copacabana (RJ)",
+      lat: -22.9711,
+      lng: -43.1822,
+      continent: "america-sul",
+      youtubeId: "04lqk8YjPYQ"
+    },
+    {
+      name: "Shibuya Crossing (Tóquio)",
+      lat: 35.6595,
+      lng: 139.7005,
+      continent: "asia",
+      youtubeId: "NLj1f8DP3wQ"
+    },
+    {
+      name: "Porto de Sydney",
+      lat: -33.8568,
+      lng: 151.2153,
+      continent: "oceania",
+      youtubeId: "93BqLew6GnY"
+    },
+    {
+      name: "Tower Bridge (Londres)",
+      lat: 51.5055,
+      lng: -0.0754,
+      continent: "europa",
+      youtubeId: "8osbR3t3gGc"
+    }
+  ];
+
+  function showInfo(c) {
+    document.getElementById('cam-title').textContent = c.name;
+    document.getElementById('cam-loc').textContent = `Lat: ${c.lat}, Lng: ${c.lng}`;
+    const embed = `<iframe width="100%" height="200" src="https://www.youtube.com/embed/${c.youtubeId}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    document.getElementById('cam-img').outerHTML = embed;
+    document.getElementById('camera-info').style.display = 'block';
+  }
+
+  function closeInfo() {
+    document.getElementById('camera-info').style.display = 'none';
+    const infoDiv = document.getElementById('camera-info');
+    infoDiv.querySelector("iframe")?.remove();
+    const newImg = document.createElement("img");
+    newImg.id = "cam-img";
+    newImg.alt = "Stream";
+    infoDiv.insertBefore(newImg, infoDiv.querySelector("button"));
+  }
+</script>
+
 
     let globe = null, refresh = null;
 
