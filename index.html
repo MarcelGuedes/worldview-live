@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <title>WorldView Live - Cesium</title>
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+    <script src="https://unpkg.com/cesium@1.109.1/Build/Cesium/Cesium.js"></script>
+    <link href="https://unpkg.com/cesium@1.109.1/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
     <style>
       html, body, #cesiumContainer {
         margin: 0;
@@ -55,22 +55,18 @@
     </div>
 
     <script>
-      // Inicialização do Cesium
-    const viewer = new Cesium.Viewer("cesiumContainer", {
-  animation: false,
-  timeline: false,
-  baseLayerPicker: false,
-  sceneModePicker: false,
-  fullscreenButton: false,
-  navigationHelpButton: false,
-});
+      const viewer = new Cesium.Viewer("cesiumContainer", {
+        animation: false,
+        timeline: false,
+        baseLayerPicker: false,
+        sceneModePicker: false,
+        fullscreenButton: false,
+        navigationHelpButton: false,
+      });
 
-
-      // Coordenadas de exemplo (Wyoming, EUA)
       const latitude = 41.139981;
       const longitude = -104.820246;
 
-      // Adiciona ponto vermelho
       const pinBuilder = new Cesium.PinBuilder();
       const redPin = viewer.entities.add({
         name: "Highway Cam - Cheyenne",
@@ -85,7 +81,6 @@
         `,
       });
 
-      // Ação ao clicar
       viewer.screenSpaceEventHandler.setInputAction(function onLeftClick(movement) {
         const pickedObject = viewer.scene.pick(movement.position);
         if (Cesium.defined(pickedObject) && pickedObject.id === redPin) {
@@ -98,7 +93,6 @@
         }
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-      // Centraliza a câmera no ponto
       viewer.camera.flyTo({
         destination: Cesium.Cartesian3.fromDegrees(longitude, latitude, 2500000)
       });
