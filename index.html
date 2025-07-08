@@ -55,14 +55,20 @@
     </div>
 
     <script>
-      const viewer = new Cesium.Viewer("cesiumContainer", {
-        animation: false,
-        timeline: false,
-        baseLayerPicker: false,
-        sceneModePicker: false,
-        fullscreenButton: false,
-        navigationHelpButton: false,
-      });
+      Cesium.Ion.defaultAccessToken = ''; // deixa vazio para evitar erros
+
+const viewer = new Cesium.Viewer("cesiumContainer", {
+  imageryProvider: new Cesium.OpenStreetMapImageryProvider({
+    url: 'https://a.tile.openstreetmap.org/'
+  }),
+  baseLayerPicker: false,
+  animation: false,
+  timeline: false,
+  sceneModePicker: false,
+  fullscreenButton: false,
+  navigationHelpButton: false,
+});
+
 
       const latitude = 41.139981;
       const longitude = -104.820246;
