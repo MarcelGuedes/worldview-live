@@ -107,7 +107,7 @@
 
     // 🌍 Textura corrigida (nova imagem do mapa mundial)
     const textureLoader = new THREE.TextureLoader();
-    const earthTexture = textureLoader.load('earthmap1.jpg');
+    const earthTexture = textureLoader.load('terra.png');
 
     const earthMaterial = new THREE.MeshPhongMaterial({ map: earthTexture });
     const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), earthMaterial);
